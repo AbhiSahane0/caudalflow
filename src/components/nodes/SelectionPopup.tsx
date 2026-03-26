@@ -1,0 +1,107 @@
+import { useState, useRef, useEffect } from 'react';
+import { Sparkles, ArrowRight, X } from 'lucide-react';
+
+interface SelectionPopupProps {
+  text: string;
+  x: number;
+  y: number;
+  onExplore: (selectedText: string, prompt: string) => void;
+  onDismiss: () => void;
+}
+
+export function SelectionPopup({ text, x, y, onExplore, onDismiss }: SelectionPopupProps) {
+  const [input, setInput] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onDismiss();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onDismiss]);
+
+  const submit = (customPrompt: string) => {
+    onExplore(text, customPrompt);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submit(input.trim());
+    }
+  };
+
+  const truncated = text.length > 40 ? text.slice(0, 40) + '…' : text;
+
+  return (
+    <div
+      data-selection-popup
+      className="nodrag nopan nowheel absolute z-50 w-72 rounded-lg border border-surface-700 bg-surface-800 shadow-xl shadow-black/50"
+      style={{
+        left: x,
+        top: y,
+        transform: 'translate(-50%, -100%)',
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <div className="px-2.5 pt-2 pb-1.5">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="text-[10px] text-neutral-500 truncate">
+            Selection: <span className="text-neutral-400">&ldquo;{truncated}&rdquo;</span>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+            className="shrink-0 text-neutral-500 hover:text-neutral-200 transition-colors ml-1"
+            title="Close (Esc)"
+          >
+            <X size={12} />
+          </button>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`Ask about "${truncated}"`}
+            className="flex-1 min-w-0 bg-neutral-800/80 text-sm text-neutral-200 rounded-md px-2.5 py-1.5 placeholder-neutral-500 border border-neutral-700/50 focus:border-accent-500/50 focus:outline-none transition-colors"
+          />
+          <button
+            className="shrink-0 p-1.5 rounded-md bg-accent-500/20 text-accent-400 hover:bg-accent-500/30 transition-colors"
+            title="Send"
+            onClick={(e) => {
+              e.stopPropagation();
+              submit(input.trim());
+            }}
+          >
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+      <div className="border-t border-neutral-700/30 px-1.5 py-1">
+        <button
+          className="w-full flex items-center gap-1.5 text-xs text-neutral-400 hover:text-accent-400 hover:bg-accent-500/10 rounded-md px-2 py-1 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            submit('');
+          }}
+        >
+          <Sparkles size={12} />
+          <span>Explore</span>
+        </button>
+      </div>
+    </div>
+  );
+}
