@@ -27,7 +27,7 @@ export function useChatNode(nodeId: string, topic: string, parentNodeId?: string
               .map((m) => ({ role: m.role, content: m.content }));
             return { topic: node.data.topic, messages: msgs };
           })
-          .filter((p): p is { topic: string; messages: Array<{ role: string; content: string }> } => p !== null);
+          .filter((p) => p !== null);
         systemPrompt = getMergeSystemPrompt(parents, mergeAction);
       } else if (parentNodeId && branchText) {
         const parentMessages = useChatStore

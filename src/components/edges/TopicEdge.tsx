@@ -4,7 +4,7 @@ import {
   EdgeLabelRenderer,
   type EdgeProps,
 } from '@xyflow/react';
-import type { TopicEdgeData } from '../../types/flow';
+import type { TopicEdge as TopicEdgeType } from '../../types/flow';
 
 export function TopicEdge({
   id,
@@ -16,7 +16,7 @@ export function TopicEdge({
   targetPosition,
   data,
   selected,
-}: EdgeProps<TopicEdgeData>) {
+}: EdgeProps<TopicEdgeType>) {
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,

@@ -1,16 +1,43 @@
 {
   "name": "caudalflow",
-  "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Visual canvas for AI conversations — branch, explore in parallel, merge insights",
   "type": "module",
+  "bin": {
+    "caudalflow": "./bin/cli.js"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
   },
+  "keywords": [
+    "ai",
+    "chat",
+    "canvas",
+    "llm",
+    "branching",
+    "conversations",
+    "anthropic",
+    "openai"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caudal-labs/caudalflow.git"
+  },
+  "homepage": "https://github.com/caudal-labs/caudalflow",
+  "license": "MIT",
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "@xyflow/react": "^12.10.1",

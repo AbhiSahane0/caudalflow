@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { Handle, Position, NodeResizer, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { Maximize2, X } from 'lucide-react';
-import type { ChatNodeData } from '../../types/flow';
+import type { ChatNode } from '../../types/flow';
 import { useChatStore } from '../../stores/chatStore';
 import { useFlowStore } from '../../stores/flowStore';
 import { useChatNode } from '../../hooks/useChatNode';
@@ -13,7 +13,7 @@ import { ChatNodeHeader } from './ChatNodeHeader';
 import { ChatMessageList } from './ChatMessageList';
 import { ChatInput } from './ChatInput';
 
-export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNodeData>) {
+export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
   const { topic, collapsed, minimized, maximized, parentNodeId, branchText, parentNodeIds, mergeAction } = data;
   const { sendMessage, cancelStream } = useChatNode(id, topic, parentNodeId, branchText, parentNodeIds as string[] | undefined, mergeAction as string | undefined);
   const { getViewport, setViewport } = useReactFlow();

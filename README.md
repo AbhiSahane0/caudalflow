@@ -78,12 +78,17 @@ Organize your explorations into separate workspaces. Each workspace persists its
 
 ## Quick Start
 
-### Prerequisites
+### Run instantly with npx
 
-- **Node.js** 18+
-- An API key from [Anthropic](https://console.anthropic.com/) or [OpenAI](https://platform.openai.com/) (optional — mock mode works out of the box)
+```bash
+npx caudalflow
+```
 
-### Install & Run
+That's it — opens in your browser, runs entirely on your machine. Your API keys never leave localhost.
+
+### Development Setup
+
+**Prerequisites:** Node.js 18+, an API key from [Anthropic](https://console.anthropic.com/) or [OpenAI](https://platform.openai.com/) (optional — mock mode works out of the box)
 
 ```bash
 git clone https://github.com/caudal-labs/caudalflow.git
