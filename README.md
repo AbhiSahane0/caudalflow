@@ -110,6 +110,8 @@ Open **http://localhost:5173** — you're in. The mock provider is active by def
 3. Paste your API key
 4. Start chatting — responses stream in real-time
 
+> **Your keys stay on your machine.** CaudalFlow runs entirely in your browser — API keys are stored in localStorage and sent directly to the provider. There is no backend, no server, no third party in between.
+
 ---
 
 ## How It Works
