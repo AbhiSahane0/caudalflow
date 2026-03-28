@@ -9,7 +9,7 @@
 <h1 align="center">CaudalFlow</h1>
 
 <p align="center">
-  <strong>Think in branches. Explore in parallel. Merge what matters.</strong>
+  <strong>Every idea deserves a side quest. Branch, compare, merge.</strong>
 </p>
 
 <p align="center">
