@@ -7,11 +7,13 @@ interface SettingsState {
   showMinimap: boolean;
   showSystemPrompts: boolean;
   showSettings: boolean;
+  welcomeDismissed: boolean;
   updateLLMConfig: (config: Partial<LLMConfig>) => void;
   toggleMinimap: () => void;
   toggleSystemPrompts: () => void;
   toggleSettings: () => void;
   setShowSettings: (show: boolean) => void;
+  dismissWelcome: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -29,6 +31,7 @@ export const useSettingsStore = create<SettingsState>()(
       showMinimap: true,
       showSystemPrompts: false,
       showSettings: false,
+      welcomeDismissed: false,
 
       updateLLMConfig: (config) => {
         const current = get().llmConfig;
@@ -57,6 +60,8 @@ export const useSettingsStore = create<SettingsState>()(
       toggleSettings: () => set({ showSettings: !get().showSettings }),
 
       setShowSettings: (show) => set({ showSettings: show }),
+
+      dismissWelcome: () => set({ welcomeDismissed: true }),
     }),
     {
       name: 'caudalflow-settings',
@@ -64,6 +69,7 @@ export const useSettingsStore = create<SettingsState>()(
         llmConfig: state.llmConfig,
         showMinimap: state.showMinimap,
         showSystemPrompts: state.showSystemPrompts,
+        welcomeDismissed: state.welcomeDismissed,
       }),
     }
   )

@@ -1,6 +1,6 @@
 {
   "name": "caudalflow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Visual canvas for AI conversations — branch, explore in parallel, merge insights",
   "type": "module",
   "bin": {

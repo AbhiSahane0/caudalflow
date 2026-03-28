@@ -19,6 +19,7 @@ import { CanvasControls } from './CanvasControls';
 import { SettingsPanel } from '../ui/SettingsPanel';
 import { WorkspaceSelector } from '../ui/WorkspaceSelector';
 import { MergeSelectionPopup } from './MergeSelectionPopup';
+import { WelcomePopup } from '../ui/WelcomePopup';
 import { calculateMergePosition } from '../../utils/nodeLayout';
 import { getMergeSystemPrompt } from '../../utils/systemPrompts';
 import { streamChat } from '../../services/llm';
@@ -229,6 +230,7 @@ export function Canvas() {
         </ReactFlow>
         <CanvasControls />
         <SettingsPanel />
+        <WelcomePopup />
         {selectedNodes.length >= 2 && (
           <MergeSelectionPopup
             topics={selectedTopics}
