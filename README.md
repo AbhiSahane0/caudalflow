@@ -9,7 +9,7 @@
 <h1 align="center">CaudalFlow</h1>
 
 <p align="center">
-  <strong>Explore your ideas, embrace a side quest, compare or merge concepts.</strong>
+  <strong>Every idea deserves a side quest. Branch, compare, merge.</strong>
 </p>
 
 <p align="center">
