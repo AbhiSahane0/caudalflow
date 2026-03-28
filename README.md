@@ -16,6 +16,10 @@
   CaudalFlow is a visual canvas for AI conversations that lets you branch, explore, and merge ideas like a mind map — powered by LLMs.
 </p>
 
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/a2cc3f5d-cf6b-42e9-a4ac-3f561fe871a7" width="800" autoplay loop muted playsinline></video>
+</p>
+
 ---
 
 ## The Problem
