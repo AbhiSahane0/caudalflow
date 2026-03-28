@@ -18,7 +18,7 @@ export const OpenAIProvider: LLMProvider = {
       model: config.model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       temperature: config.temperature,
-      max_tokens: config.maxTokens,
+      max_completion_tokens: config.maxTokens,
       stream: true,
     };
 
