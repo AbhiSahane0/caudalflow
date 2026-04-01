@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { Handle, Position, NodeResizer, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { Maximize2, X } from 'lucide-react';
@@ -14,12 +14,44 @@ import { ChatMessageList } from './ChatMessageList';
 import { ChatInput } from './ChatInput';
 
 export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
-  const { topic, collapsed, minimized, maximized, parentNodeId, branchText, parentNodeIds, mergeAction } = data;
+  const { topic, collapsed, minimized, maximized, parentNodeId, branchText, parentNodeIds, mergeAction, color, label } = data;
   const { sendMessage, cancelStream } = useChatNode(id, topic, parentNodeId, branchText, parentNodeIds as string[] | undefined, mergeAction as string | undefined);
   const { getViewport, setViewport } = useReactFlow();
   const messageCount = useChatStore(
     (s) => s.conversations[id]?.messages.filter((m) => m.role !== 'system').length ?? 0
   );
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    
+  function handleClickOutside(event: MouseEvent) {
+    if (!popoverRef.current) return;
+
+    if (!popoverRef.current.contains(event.target as Node)) {
+      setIsPaletteOpen(false);
+    }
+  }
+
+  const handleKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsPaletteOpen(false);
+    }
+  };
+
+  if (isPaletteOpen) {
+    window.addEventListener('keydown', handleKey);
+  }
+
+  if (isPaletteOpen) {
+    document.addEventListener('mousedown', handleClickOutside);
+  }
+
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);    window.removeEventListener('keydown', handleKey);
+    window.removeEventListener('keydown', handleKey);
+  };
+}, [isPaletteOpen]);
 
   useEffect(() => {
     useChatStore.getState().initConversation(id);
@@ -244,6 +276,16 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
     [id, topic]
   );
 
+  const updateColor = (newColor?: string) => {
+    useFlowStore.getState().updateNodeData(id, { color: newColor });
+  };
+
+  const updateLabel = (newLabel?: string) => {
+    useFlowStore.getState().updateNodeData(id, {
+      label: newLabel?.trim() || undefined,
+    });
+  };
+
   if (minimized) {
     return (
       <div
@@ -291,13 +333,14 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
   }
 
   return (
-    <div
-      className={`flex flex-col bg-surface-900 border rounded-xl shadow-xl shadow-black/30 h-full ${
-        selected
-          ? 'border-accent-500/60'
-          : 'border-neutral-700/50'
-      } transition-colors`}
-    >
+      <div
+          className={`relative flex flex-col bg-surface-900 border rounded-xl shadow-xl shadow-black/30 h-full transition-colors ${
+            selected ? 'border-accent-500/60' : 'border-neutral-700/50'
+          }`}
+          style={{
+            borderTop: color ? `4px solid ${color}` : undefined,
+          }}
+      >
       <NodeResizer
         minWidth={320}
         minHeight={collapsed ? 52 : 300}
@@ -326,7 +369,63 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
         onMinimize={handleMinimize}
         onMaximize={handleMaximize}
         onClose={handleClose}
+        onTogglePalette={() => setIsPaletteOpen((p) => !p)}
+        color={color}
+        label={label}
       />
+
+      {isPaletteOpen && (
+        <div   
+          ref={popoverRef}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="absolute top-10 right-3 z-50 bg-neutral-900 border border-neutral-700 rounded-lg p-3 w-48 nodrag">
+    
+          <div className="flex flex-wrap gap-2 mb-2">
+          {[
+            '#ef4444',
+            '#f97316',
+            '#eab308',
+            '#22c55e',
+            '#3b82f6',
+            '#a855f7',
+            '#ec4899',
+            '#6b7280',
+          ].map((c) => (
+            <button
+              key={c}
+              onClick={() => updateColor(color === c ? undefined : c)}
+              className={`w-5 h-5 rounded-full border-2 ${
+                color === c ? 'border-white' : 'border-transparent'
+              }`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+          </div>
+
+          <input
+            value={label ?? ''}
+            onChange={(e) => updateLabel(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setIsPaletteOpen(false);
+              }
+            }}
+            placeholder="Add label..."
+            maxLength={20}
+            className="w-full text-xs bg-neutral-800 px-2 py-1 rounded outline-none"
+          />
+
+          <button
+            onClick={() => {
+              updateColor(undefined);
+              updateLabel(undefined);
+            }}
+            className="text-xs text-red-400 mt-2"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {!collapsed && (
         <>
