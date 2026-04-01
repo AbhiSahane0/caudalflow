@@ -1,8 +1,9 @@
-import { memo, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Check, Copy } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '../../types/chat';
 
 interface ChatMessageProps {
@@ -63,6 +64,32 @@ export const ChatMessage = memo(function ChatMessage({
 }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
+  const [copied, setCopied] = useState(false);
+  const resetTimeoutRef = useRef<number | null>(null);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(message.content || '');
+      setCopied(true);
+      if (resetTimeoutRef.current !== null) {
+        window.clearTimeout(resetTimeoutRef.current);
+      }
+      resetTimeoutRef.current = window.setTimeout(() => {
+        setCopied(false);
+        resetTimeoutRef.current = null;
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to copy message content', error);
+    }
+  }, [message.content]);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current !== null) {
+        window.clearTimeout(resetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const withHighlights = (children: ReactNode) =>
     isUser ? children : highlightExplored(children, exploredTexts);
@@ -85,12 +112,21 @@ export const ChatMessage = memo(function ChatMessage({
       }`}
     >
       <div
-        className={`text-sm leading-relaxed ${
+        className={`relative group text-sm leading-relaxed ${
           isUser
-            ? 'bg-accent-600 text-white rounded-2xl rounded-br-md px-3 py-2 max-w-[85%] inline-block'
-            : 'text-neutral-200 prose-invert prose-sm max-w-none'
+            ? 'bg-accent-600 text-white rounded-2xl rounded-br-md px-3 py-2 pr-7 max-w-[85%] inline-block'
+            : 'text-neutral-200 prose-invert prose-sm max-w-none pr-7'
         }`}
       >
+        <button
+          type="button"
+          aria-label={copied ? 'Copied message' : 'Copy message'}
+          data-state={copied ? 'copied' : 'idle'}
+          onClick={handleCopy}
+          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-neutral-500 hover:text-neutral-300"
+        >
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+        </button>
         {isUser ? (
           message.content
         ) : (
