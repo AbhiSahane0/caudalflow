@@ -115,7 +115,7 @@ export function WorkspaceSelector() {
       if (file) importWorkspace(file);
       e.target.value = '';
     },
-    [importWorkspace]
+    []
   );
 
   return (
