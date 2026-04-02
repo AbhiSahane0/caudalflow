@@ -10,6 +10,8 @@ export interface ChatNodeData {
   minimized?: boolean;
   maximized?: boolean;
   [key: string]: unknown;
+  color?: string
+  label?: string
 }
 
 export type ChatNode = Node<ChatNodeData, 'chat'>;

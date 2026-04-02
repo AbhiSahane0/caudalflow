@@ -163,4 +163,69 @@ describe('flowStore', () => {
       expect(useFlowStore.getState().edges).toHaveLength(0);
     });
   });
+
+  describe('updateNodeData', () => {
+
+    it('updates node color', () => {
+  const id = useFlowStore.getState().addChatNode(
+    { x: 0, y: 0 },
+    { topic: 'Test' }
+  );
+
+  useFlowStore.getState().updateNodeData(id, { color: '#ef4444' });
+
+  const node = useFlowStore.getState().nodes.find((n) => n.id === id);
+
+  expect(node?.data.color).toBe('#ef4444');
+    });
+
+    it('updates node label', () => {
+      const id = useFlowStore.getState().addChatNode(
+        { x: 0, y: 0 },
+        { topic: 'Test' }
+      );
+
+      useFlowStore.getState().updateNodeData(id, { label: 'Research' });
+
+      const node = useFlowStore.getState().nodes.find((n) => n.id === id);
+
+      expect(node?.data.label).toBe('Research');
+    });
+
+    it('clears color and label when undefined is passed', () => {
+      const id = useFlowStore.getState().addChatNode(
+        { x: 0, y: 0 },
+        { topic: 'Test', color: '#fff', label: 'Temp' }
+      );
+
+      useFlowStore.getState().updateNodeData(id, {
+        color: undefined,
+        label: undefined,
+      });
+
+      const node = useFlowStore.getState().nodes.find((n) => n.id === id);
+
+      expect(node?.data.color).toBeUndefined();
+      expect(node?.data.label).toBeUndefined();
+    });
+
+    it('does not overwrite other node data fields when updating color/label', () => {
+      const id = useFlowStore.getState().addChatNode(
+        { x: 0, y: 0 },
+        { topic: 'Original', collapsed: true }
+      );
+
+      useFlowStore.getState().updateNodeData(id, {
+        color: '#22c55e',
+        label: 'Approved',
+      });
+
+      const node = useFlowStore.getState().nodes.find((n) => n.id === id);
+
+      expect(node?.data.topic).toBe('Original');
+      expect(node?.data.collapsed).toBe(true);
+      expect(node?.data.color).toBe('#22c55e');
+      expect(node?.data.label).toBe('Approved');
+    });
+  })
 });
