@@ -44,8 +44,8 @@ export function ChatNodeHeader({
             <span
               className="text-[10px] px-2 py-0.5 rounded-full"
               style={{
-                backgroundColor: color ? `${color}20` : undefined,
-                color: color,
+                backgroundColor: color ? `${color}20` : "bg-neutral-800",
+                color: color ? color : "text-neutral-400",
               }}
             >
               {label}
