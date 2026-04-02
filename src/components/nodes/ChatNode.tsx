@@ -53,19 +53,22 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
   );
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const labelRef = useRef(label);
+  useEffect(() => { labelRef.current = label; }, [label]);
 
-  const updateLabel = (newLabel?: string) => {
+  const updateLabel = useCallback((newLabel?: string) => {
     useFlowStore.getState().updateNodeData(id, {
       label: newLabel,
     });
-  };
+  }, [id]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (!popoverRef.current) return;
 
       if (!popoverRef.current.contains(event.target as Node)) {
-        updateLabel(label?.trim() || undefined);
+        const trimmed = labelRef.current?.trim() || undefined;
+        useFlowStore.getState().updateNodeData(id, { label: trimmed });
         setIsPaletteOpen(false);
       }
     }
@@ -85,7 +88,7 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("keydown", handleKey);
     };
-  }, [isPaletteOpen]);
+  }, [isPaletteOpen, id]);
 
   useEffect(() => {
     useChatStore.getState().initConversation(id);
