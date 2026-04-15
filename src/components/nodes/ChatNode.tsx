@@ -20,8 +20,48 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
   const { sendMessage, cancelStream } = useChatNode(id, topic, parentNodeId, branchText, parentNodeIds as string[] | undefined, mergeAction as string | undefined);
   const { getViewport, setViewport } = useReactFlow();
   const messageCount = useChatStore(
-    (s) => s.conversations[id]?.messages.filter((m) => m.role !== 'system').length ?? 0
+    (s) =>
+      s.conversations[id]?.messages.filter((m) => m.role !== "system").length ??
+      0,
   );
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const labelRef = useRef(label);
+  useEffect(() => { labelRef.current = label; }, [label]);
+
+  const updateLabel = useCallback((newLabel?: string) => {
+    useFlowStore.getState().updateNodeData(id, {
+      label: newLabel,
+    });
+  }, [id]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!popoverRef.current) return;
+
+      if (!popoverRef.current.contains(event.target as Node)) {
+        const trimmed = labelRef.current?.trim() || undefined;
+        useFlowStore.getState().updateNodeData(id, { label: trimmed });
+        setIsPaletteOpen(false);
+      }
+    }
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsPaletteOpen(false);
+      }
+    };
+
+    if (isPaletteOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("keydown", handleKey);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [isPaletteOpen, id]);
 
   useEffect(() => {
     useChatStore.getState().initConversation(id);
@@ -42,11 +82,17 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
         n.id === id
           ? {
               ...n,
-              data: { ...n.data, minimized: true, maximized: false, _prevWidth: prevWidth, _prevHeight: prevHeight },
-              style: { ...n.style, width: 'auto', height: 'auto' },
+              data: {
+                ...n.data,
+                minimized: true,
+                maximized: false,
+                _prevWidth: prevWidth,
+                _prevHeight: prevHeight,
+              },
+              style: { ...n.style, width: "auto", height: "auto" },
             }
-          : n
-      )
+          : n,
+      ),
     );
   }, [id]);
 
@@ -65,10 +111,13 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
               ...n,
               data: { ...n.data, minimized: false, maximized: false },
               style: { ...n.style, width: w, height: h },
-              position: prevX != null && prevY != null ? { x: prevX, y: prevY } : n.position,
+              position:
+                prevX != null && prevY != null
+                  ? { x: prevX, y: prevY }
+                  : n.position,
             }
-          : n
-      )
+          : n,
+      ),
     );
   }, [id]);
 
@@ -95,11 +144,14 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
                 style: { ...n.style, width: w, height: h },
                 position: { x: prevX, y: prevY },
               }
-            : n
-        )
+            : n,
+        ),
       );
       if (prevZoom) {
-        setViewport({ x: prevVpX, y: prevVpY, zoom: prevZoom }, { duration: 200 });
+        setViewport(
+          { x: prevVpX, y: prevVpY, zoom: prevZoom },
+          { duration: 200 },
+        );
       }
       return;
     }
@@ -111,11 +163,14 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
     const padding = 40;
 
     // Fixed node dimensions in flow-coordinates — half the screen width at zoom=1
-    const nodeHeight = (window.innerHeight - padding * 2);
+    const nodeHeight = window.innerHeight - padding * 2;
     const nodeWidth = window.innerWidth / 2 - padding * 2;
 
     // Zoom so the node height fills the viewport vertically
-    const zoom = Math.min(Math.max((window.innerHeight - padding * 2) / nodeHeight, 0.1), 2);
+    const zoom = Math.min(
+      Math.max((window.innerHeight - padding * 2) / nodeHeight, 0.1),
+      2,
+    );
 
     // Position the node at the origin for simplicity, then pan viewport to center it
     const nodeX = node.position.x;
@@ -144,8 +199,8 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
               style: { ...n.style, width: nodeWidth, height: nodeHeight },
               position: { x: nodeX, y: nodeY },
             }
-          : n
-      )
+          : n,
+      ),
     );
     setViewport({ x: vpX, y: vpY, zoom }, { duration: 200 });
   }, [id, maximized, getViewport, setViewport]);
@@ -173,8 +228,10 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
       if (parentNode.data.maximized) {
         const w = (parentNode.data._prevWidth as number) ?? 400;
         const h = (parentNode.data._prevHeight as number) ?? 500;
-        const prevX = (parentNode.data._prevX as number) ?? parentNode.position.x;
-        const prevY = (parentNode.data._prevY as number) ?? parentNode.position.y;
+        const prevX =
+          (parentNode.data._prevX as number) ?? parentNode.position.x;
+        const prevY =
+          (parentNode.data._prevY as number) ?? parentNode.position.y;
         flowStore.setNodes(
           flowStore.nodes.map((n) =>
             n.id === id
@@ -184,8 +241,8 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
                   style: { ...n.style, width: w, height: h },
                   position: { x: prevX, y: prevY },
                 }
-              : n
-          )
+              : n,
+          ),
         );
         // Re-read updated node
         parentNode = useFlowStore.getState().nodes.find((n) => n.id === id)!;
@@ -212,7 +269,7 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
         .map((m) => ({ role: m.role, content: m.content }));
 
       const systemPrompt = getBranchSystemPrompt(topic, parentMessages);
-      chatStore.addMessage(newNodeId, 'system', systemPrompt);
+      chatStore.addMessage(newNodeId, "system", systemPrompt);
 
       // First user message: popup input + highlighted text
       const firstMessage = prompt
@@ -224,14 +281,22 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
         const store = useChatStore.getState();
         const messages = store.getMessages(newNodeId);
 
-        store.addMessage(newNodeId, 'user', firstMessage);
-        store.addMessage(newNodeId, 'assistant', '');
+        store.addMessage(newNodeId, "user", firstMessage);
+        store.addMessage(newNodeId, "assistant", "");
         store.setStreaming(newNodeId, true);
 
         const controller = new AbortController();
 
         streamChat(
-          [...messages, { id: 'q', role: 'user' as const, content: firstMessage, timestamp: Date.now() }],
+          [
+            ...messages,
+            {
+              id: "q",
+              role: "user" as const,
+              content: firstMessage,
+              timestamp: Date.now(),
+            },
+          ],
           {
             onToken: (token: string) => {
               useChatStore.getState().appendToLastMessage(newNodeId, token);
@@ -240,19 +305,25 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
               useChatStore.getState().setStreaming(newNodeId, false);
             },
             onError: (error: Error) => {
-              useChatStore.getState().appendToLastMessage(
-                newNodeId,
-                `\n\n**Error:** ${error.message}`
-              );
+              useChatStore
+                .getState()
+                .appendToLastMessage(
+                  newNodeId,
+                  `\n\n**Error:** ${error.message}`,
+                );
               useChatStore.getState().setStreaming(newNodeId, false);
             },
           },
-          controller.signal
+          controller.signal,
         );
       }, 100);
     },
-    [id, topic]
+    [id, topic],
   );
+
+  const updateColor = (newColor?: string) => {
+    useFlowStore.getState().updateNodeData(id, { color: newColor });
+  };
 
   if (minimized) {
     return (
@@ -343,6 +414,9 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
         onMinimize={handleMinimize}
         onMaximize={handleMaximize}
         onClose={handleClose}
+        onTogglePalette={() => setIsPaletteOpen((p) => !p)}
+        color={color}
+        label={label}
       />
       {showDeleteConfirmation && (
         <ChatNodeDeleteConfirmation
@@ -350,6 +424,51 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
         />
+      )}
+
+      {isPaletteOpen && (
+        <div
+          ref={popoverRef}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="absolute top-10 right-3 z-50 bg-neutral-900 border border-neutral-700 rounded-lg p-3 w-48 nodrag"
+        >
+          <div className="flex flex-wrap gap-2 mb-2">
+            {PALETTE_COLORS.map((c) => (
+              <button
+                key={c}
+                onClick={() => updateColor(color === c ? undefined : c)}
+                className={`w-5 h-5 rounded-full border-2 ${
+                  color === c ? "border-white" : "border-transparent"
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+
+          <input
+            value={label ?? ""}
+            onChange={(e) => updateLabel(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                updateLabel(label?.trim() || undefined);
+                setIsPaletteOpen(false);
+              }
+            }}
+            placeholder="Add label..."
+            maxLength={20}
+            className="w-full text-xs bg-neutral-800 px-2 py-1 rounded outline-none"
+          />
+
+          <button
+            onClick={() => {
+              updateColor(undefined);
+              updateLabel(undefined);
+            }}
+            className="text-xs text-red-400 mt-2"
+          >
+            Clear
+          </button>
+        </div>
       )}
 
       {!collapsed && (
