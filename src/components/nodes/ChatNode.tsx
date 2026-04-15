@@ -1,50 +1,32 @@
-import { useCallback, useEffect, useState, useRef } from "react";
-import { Handle, Position, NodeResizer, useReactFlow } from "@xyflow/react";
-import type { NodeProps } from "@xyflow/react";
-import { Maximize2, X } from "lucide-react";
-import type { ChatNode } from "../../types/flow";
-import { useChatStore } from "../../stores/chatStore";
-import { useFlowStore } from "../../stores/flowStore";
-import { useChatNode } from "../../hooks/useChatNode";
-import { streamChat } from "../../services/llm";
-import { calculateBranchPosition } from "../../utils/nodeLayout";
-import { getBranchSystemPrompt } from "../../utils/systemPrompts";
-import { ChatNodeHeader } from "./ChatNodeHeader";
-import { ChatMessageList } from "./ChatMessageList";
-import { ChatInput } from "./ChatInput";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Handle, Position, NodeResizer, useReactFlow } from '@xyflow/react';
+import type { NodeProps } from '@xyflow/react';
+import { Maximize2, X } from 'lucide-react';
+import type { ChatNode } from '../../types/flow';
+import { useChatStore } from '../../stores/chatStore';
+import { useFlowStore } from '../../stores/flowStore';
+import { useChatNode } from '../../hooks/useChatNode';
+import { streamChat } from '../../services/llm';
+import { calculateBranchPosition } from '../../utils/nodeLayout';
+import { getBranchSystemPrompt } from '../../utils/systemPrompts';
+import { ChatNodeHeader } from './ChatNodeHeader';
+import { ChatMessageList } from './ChatMessageList';
+import { ChatInput } from './ChatInput';
+import { ChatNodeDeleteConfirmation } from './ChatNodeDeleteConfirmation';
 
 const PALETTE_COLORS = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#3b82f6",
-  "#a855f7",
-  "#ec4899",
-  "#6b7280",
+  '#22c55e',
+  '#3b82f6',
+  '#f59e0b',
+  '#ef4444',
+  '#a855f7',
+  '#06b6d4',
 ];
 
 export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
-  const {
-    topic,
-    collapsed,
-    minimized,
-    maximized,
-    parentNodeId,
-    branchText,
-    parentNodeIds,
-    mergeAction,
-    color,
-    label,
-  } = data;
-  const { sendMessage, cancelStream } = useChatNode(
-    id,
-    topic,
-    parentNodeId,
-    branchText,
-    parentNodeIds as string[] | undefined,
-    mergeAction as string | undefined,
-  );
+  const { topic, collapsed, minimized, maximized, parentNodeId, branchText, parentNodeIds, mergeAction, color, label } = data;
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const { sendMessage, cancelStream } = useChatNode(id, topic, parentNodeId, branchText, parentNodeIds as string[] | undefined, mergeAction as string | undefined);
   const { getViewport, setViewport } = useReactFlow();
   const messageCount = useChatStore(
     (s) =>
@@ -233,6 +215,14 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
   }, [id, maximized, getViewport, setViewport]);
 
   const handleClose = useCallback(() => {
+    setShowDeleteConfirmation(true);
+  }, []);
+
+  const handleCancelDelete = useCallback(() => {
+    setShowDeleteConfirmation(false);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
     useFlowStore.getState().removeNode(id);
     useChatStore.getState().removeConversation(id);
   }, [id]);
@@ -347,8 +337,8 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
   if (minimized) {
     return (
       <div
-        className={`flex items-center gap-2 bg-surface-900 border rounded-full shadow-lg shadow-black/30 px-3 py-1.5 cursor-grab active:cursor-grabbing ${
-          selected ? "border-accent-500/60" : "border-neutral-700/50"
+        className={`relative flex items-center gap-2 bg-surface-900 border rounded-full shadow-lg shadow-black/30 px-3 py-1.5 cursor-grab active:cursor-grabbing ${
+          selected ? 'border-accent-500/60' : 'border-neutral-700/50'
         } transition-colors`}
         onDoubleClick={handleRestore}
       >
@@ -386,18 +376,24 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
         >
           <X size={12} />
         </button>
+        {showDeleteConfirmation && (
+          <ChatNodeDeleteConfirmation
+            topic={topic}
+            onConfirm={handleConfirmDelete}
+            onCancel={handleCancelDelete}
+          />
+        )}
       </div>
     );
   }
 
   return (
     <div
-      className={`relative flex flex-col bg-surface-900 border rounded-xl shadow-xl shadow-black/30 h-full transition-colors ${
-        selected ? "border-accent-500/60" : "border-neutral-700/50"
-      }`}
-      style={{
-        borderTop: color ? `4px solid ${color}` : undefined,
-      }}
+      className={`relative flex flex-col bg-surface-900 border rounded-xl shadow-xl shadow-black/30 h-full ${
+        selected
+          ? 'border-accent-500/60'
+          : 'border-neutral-700/50'
+      } transition-colors`}
     >
       <NodeResizer
         minWidth={320}
@@ -431,6 +427,13 @@ export function ChatNodeComponent({ id, data, selected }: NodeProps<ChatNode>) {
         color={color}
         label={label}
       />
+      {showDeleteConfirmation && (
+        <ChatNodeDeleteConfirmation
+          topic={topic}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
+      )}
 
       {isPaletteOpen && (
         <div
