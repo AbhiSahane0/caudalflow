@@ -1,9 +1,45 @@
 import type { LLMProvider, StreamCallbacks } from './types';
 import type { ChatMessage, LLMConfig } from '../../types/chat';
 
+function toOpenAIMessages(messages: ChatMessage[]) {
+  return messages.map((m, index) => {
+    const isLast = index === messages.length - 1;
+
+    const validImages =
+      isLast
+        ? m.images?.filter(
+            (img) =>
+              img &&
+              img.base64 &&
+              img.mimeType?.startsWith('image/')
+          ) || []
+        : []; 
+
+    if (validImages.length > 0) {
+      return {
+        role: m.role,
+        content: [
+          ...(m.content
+            ? [{ type: 'text', text: m.content }]
+            : []),
+          ...validImages.map((img) => ({
+            type: 'image_url',
+            image_url: {
+              url: `data:${img.mimeType};base64,${img.base64}`,
+            },
+          })),
+        ],
+      };
+    }
+
+    return { role: m.role, content: m.content };
+  });
+}
+
 export const OpenAIProvider: LLMProvider = {
   id: 'openai',
   name: 'OpenAI',
+  supportsVision: true,
 
   async streamChat(
     messages: ChatMessage[],
@@ -16,7 +52,7 @@ export const OpenAIProvider: LLMProvider = {
 
     const body = {
       model: config.model,
-      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      messages: toOpenAIMessages(messages),
       temperature: config.temperature,
       max_completion_tokens: config.maxTokens,
       stream: true,
@@ -68,7 +104,7 @@ export const OpenAIProvider: LLMProvider = {
               callbacks.onToken(content);
             }
           } catch {
-            // skip malformed JSON lines
+              continue;
           }
         }
       }

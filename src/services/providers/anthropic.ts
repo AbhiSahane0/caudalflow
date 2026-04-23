@@ -1,6 +1,29 @@
 import type { LLMProvider, StreamCallbacks } from './types';
 import type { ChatMessage, LLMConfig } from '../../types/chat';
 
+function toAnthropicMessages(messages: ChatMessage[]) {
+  return messages.map((m) => {
+    if (m.images && m.images.length > 0) {
+      return {
+        role: m.role,
+        content: [
+          ...m.images.map((img) => ({
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: img.mimeType,
+              data: img.base64,
+            },
+          })),
+          ...(m.content ? [{ type: 'text', text: m.content }] : []),
+        ],
+      };
+    }
+
+    return { role: m.role, content: m.content };
+  });
+}
+
 export const AnthropicProvider: LLMProvider = {
   id: 'anthropic',
   name: 'Anthropic',
@@ -20,7 +43,7 @@ export const AnthropicProvider: LLMProvider = {
 
     const body: Record<string, unknown> = {
       model: config.model,
-      messages: nonSystemMessages.map((m) => ({ role: m.role, content: m.content })),
+      messages: toAnthropicMessages(nonSystemMessages),
       max_tokens: config.maxTokens,
       temperature: config.temperature,
       stream: true,
@@ -85,10 +108,13 @@ export const AnthropicProvider: LLMProvider = {
             }
           } catch (e) {
             if (e instanceof Error && e.message.startsWith('API error')) throw e;
+
             if (e instanceof Error && e.message !== 'Unknown stream error' &&
                 !e.message.includes('stream error')) {
-              // skip malformed JSON lines
-            } else if (e instanceof Error) {
+              continue;
+            }
+
+            if (e instanceof Error) {
               throw e;
             }
           }

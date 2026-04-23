@@ -5,7 +5,10 @@ import type { ChatMessage, Conversation, MessageRole } from '../types/chat';
 interface ChatState {
   conversations: Record<string, Conversation>;
   initConversation: (nodeId: string) => void;
-  addMessage: (nodeId: string, role: MessageRole, content: string) => string;
+  addMessage: (nodeId: string, role: MessageRole, content: string, images?: {
+    base64: string;
+    mimeType: string;
+  }[]) => string;
   appendToLastMessage: (nodeId: string, chunk: string) => void;
   setStreaming: (nodeId: string, streaming: boolean) => void;
   getMessages: (nodeId: string) => ChatMessage[];
@@ -26,9 +29,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
   },
 
-  addMessage: (nodeId, role, content) => {
+  addMessage: (nodeId, role, content,images) => {
     const id = nanoid();
-    const message: ChatMessage = { id, role, content, timestamp: Date.now() };
+    const message: ChatMessage = { id, role, content, timestamp: Date.now(),images };
     const conv = get().conversations[nodeId];
     if (!conv) return id;
     set({
