@@ -5,7 +5,10 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   timestamp: number;
-}
+  images?: {
+    base64: string;
+    mimeType: string;
+  }[];}
 
 export interface Conversation {
   nodeId: string;

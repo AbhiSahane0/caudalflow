@@ -4,15 +4,21 @@ import { streamChat } from '../services/llm';
 import { getRootSystemPrompt, getBranchSystemPrompt, getMergeSystemPrompt } from '../utils/systemPrompts';
 import { useFlowStore } from '../stores/flowStore';
 import type { ChatMessage } from '../types/chat';
+import { validateImage, fileToBase64 } from '../utils/image';
 
 export function useChatNode(nodeId: string, topic: string, parentNodeId?: string, branchText?: string, parentNodeIds?: string[], mergeAction?: string) {
   const abortRef = useRef<AbortController | null>(null);
 
   const sendMessage = useCallback(
-    (content: string) => {
+    async(content: string, files: File[] = []) => {
+      const processedImages = await Promise.all(
+        files.map(async (file) => {
+          validateImage(file);
+          return await fileToBase64(file);
+        })
+      );      
       const store = useChatStore.getState();
-      store.addMessage(nodeId, 'user', content);
-
+      store.addMessage(nodeId, 'user', content, processedImages);
       const messages = store.getMessages(nodeId);
 
       // Build messages array with system prompt

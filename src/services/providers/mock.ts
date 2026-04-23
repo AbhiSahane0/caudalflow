@@ -13,7 +13,12 @@ const MOCK_RESPONSES: Record<string, string[]> = {
 
 function getResponseForTopic(messages: ChatMessage[]): string {
   const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
-  const topic = lastUserMsg?.content ?? '';
+
+  const topic =
+    lastUserMsg?.content ||
+    (lastUserMsg?.images && lastUserMsg.images.length > 0
+      ? 'image'
+      : '');
 
   const responses = MOCK_RESPONSES.default;
   const hash = topic.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
@@ -23,6 +28,7 @@ function getResponseForTopic(messages: ChatMessage[]): string {
 export const MockProvider: LLMProvider = {
   id: 'mock',
   name: 'Mock (Development)',
+  supportsVision: false,
 
   streamChat(
     messages: ChatMessage[],

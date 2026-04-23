@@ -15,4 +15,5 @@ export interface LLMProvider {
     callbacks: StreamCallbacks,
     signal: AbortSignal
   ) => void;
+  supportsVision?: boolean;
 }

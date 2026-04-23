@@ -65,6 +65,7 @@ export const ChatMessage = memo(function ChatMessage({
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const [copied, setCopied] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const resetTimeoutRef = useRef<number | null>(null);
 
   const handleCopy = useCallback(async () => {
@@ -89,6 +90,15 @@ export const ChatMessage = memo(function ChatMessage({
         window.clearTimeout(resetTimeoutRef.current);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightbox(null);
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   const withHighlights = (children: ReactNode) =>
@@ -128,8 +138,22 @@ export const ChatMessage = memo(function ChatMessage({
           {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
         {isUser ? (
-          message.content
-        ) : (
+            <div className="flex flex-col gap-2">
+              {message?.images?.map((img, i) => {
+                const url = `data:${img.mimeType};base64,${img.base64}`;
+
+                return (
+                  <img
+                    key={i}
+                    src={url}
+                    onClick={() => setLightbox(url)}
+                    className="max-w-25 sm:max-w-25 rounded-lg cursor-pointer border border-neutral-700 hover:opacity-90 transition"
+                  />
+                );
+              })}
+              {message.content && <div>{message.content}</div>}
+            </div>
+          ) : (
           <Markdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -240,6 +264,19 @@ export const ChatMessage = memo(function ChatMessage({
           </Markdown>
         )}
       </div>
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox}
+            className="max-w-[90%] max-h-[90%] rounded-lg shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 });
