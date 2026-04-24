@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import {
   ZoomIn,
@@ -22,6 +22,16 @@ export function CanvasControls() {
   const showMinimap = useSettingsStore((s) => s.showMinimap);
   const toggleSettings = useSettingsStore((s) => s.toggleSettings);
   const [showHelp, setShowHelp] = useState(false);
+  const arrangeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (arrangeTimerRef.current !== null) {
+        window.clearTimeout(arrangeTimerRef.current);
+      }
+      document.querySelector('.react-flow')?.classList.remove('auto-arranging');
+    };
+  }, []);
 
   const handleNewNode = () => {
     const viewport = getViewport();
@@ -37,6 +47,14 @@ export function CanvasControls() {
 
   const handleAutoArrange = () => {
     const flowStore = useFlowStore.getState();
+    const flowElement = document.querySelector('.react-flow');
+
+    if (arrangeTimerRef.current !== null) {
+      window.clearTimeout(arrangeTimerRef.current);
+    }
+
+    flowElement?.classList.add('auto-arranging');
+
     const positions = calculateAutoLayoutPositions(flowStore.nodes, flowStore.edges, {
       horizontalGap: 100,
       verticalGap: 40,
@@ -54,6 +72,12 @@ export function CanvasControls() {
         };
       })
     );
+
+    arrangeTimerRef.current = window.setTimeout(() => {
+      fitView({ padding: 0.2 });
+      flowElement?.classList.remove('auto-arranging');
+      arrangeTimerRef.current = null;
+    }, 320);
   };
 
   const btnClass =
