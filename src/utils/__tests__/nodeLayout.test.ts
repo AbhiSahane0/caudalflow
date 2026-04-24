@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { calculateBranchPosition, calculateMergePosition } from '../nodeLayout';
-import type { ChatNode } from '../../types/flow';
+import {
+  calculateAutoLayoutPositions,
+  calculateBranchPosition,
+  calculateMergePosition,
+} from '../nodeLayout';
+import type { ChatNode, TopicEdge } from '../../types/flow';
 
 function makeNode(
   id: string,
@@ -18,6 +22,18 @@ function makeNode(
       ...(width !== undefined && { width }),
       ...(height !== undefined && { height }),
     },
+  };
+}
+
+function makeEdge(source: string, target: string): TopicEdge {
+  return {
+    id: `e-${source}-${target}`,
+    source,
+    target,
+    sourceHandle: 'right',
+    targetHandle: 'left',
+    type: 'topic',
+    data: { label: `${source}->${target}` },
   };
 }
 
@@ -104,5 +120,80 @@ describe('calculateMergePosition', () => {
     expect(pos.x).toBe(700 + 100); // rightmost edge + gap
     // minY=0, maxY=1300, center=650, offset=650-250=400
     expect(pos.y).toBe(400);
+  });
+});
+
+describe('calculateAutoLayoutPositions', () => {
+  it('places root nodes at the leftmost column', () => {
+    const root = makeNode('root', 500, 100);
+    const child = makeNode('child', 900, 300);
+    const positions = calculateAutoLayoutPositions(
+      [root, child],
+      [makeEdge('root', 'child')]
+    );
+
+    expect(positions.root.x).toBe(0);
+    expect(positions.child.x).toBeGreaterThan(positions.root.x);
+  });
+
+  it('places children one level to the right of their parent', () => {
+    const root = makeNode('root', 0, 100);
+    const c1 = makeNode('c1', 0, 200);
+    const c2 = makeNode('c2', 0, 300);
+    const positions = calculateAutoLayoutPositions(
+      [root, c1, c2],
+      [makeEdge('root', 'c1'), makeEdge('root', 'c2')]
+    );
+
+    expect(positions.c1.x).toBeGreaterThan(positions.root.x);
+    expect(positions.c2.x).toBe(positions.c1.x);
+  });
+
+  it('places merge nodes at deepest parent level + 1', () => {
+    const root = makeNode('root', 0, 0);
+    const a = makeNode('a', 0, 0);
+    const b = makeNode('b', 0, 0);
+    const d = makeNode('d', 0, 0);
+    const merge = makeNode('merge', 0, 0);
+    const edges = [
+      makeEdge('root', 'a'),
+      makeEdge('root', 'b'),
+      makeEdge('a', 'd'),
+      makeEdge('a', 'merge'),
+      makeEdge('b', 'merge'),
+    ];
+
+    const positions = calculateAutoLayoutPositions([root, a, b, d, merge], edges);
+    expect(positions.a.x).toBe(positions.b.x);
+    expect(positions.merge.x).toBeGreaterThan(positions.a.x);
+    expect(positions.merge.x).toBe(positions.d.x);
+  });
+
+  it("stacks disconnected subgraphs so they don't overlap", () => {
+    const a1 = makeNode('a1', 0, 0, 400, 500);
+    const a2 = makeNode('a2', 0, 0, 400, 500);
+    const b1 = makeNode('b1', 0, 0, 400, 500);
+    const b2 = makeNode('b2', 0, 0, 400, 500);
+
+    const positions = calculateAutoLayoutPositions(
+      [a1, a2, b1, b2],
+      [makeEdge('a1', 'a2'), makeEdge('b1', 'b2')]
+    );
+
+    const componentAIds = ['a1', 'a2'];
+    const componentBIds = ['b1', 'b2'];
+    const componentABottom = Math.max(
+      ...componentAIds.map((id) => positions[id].y + 500)
+    );
+    const componentBTop = Math.min(...componentBIds.map((id) => positions[id].y));
+
+    expect(componentBTop).toBeGreaterThan(componentABottom);
+  });
+
+  it('keeps a single node in place when there are no edges', () => {
+    const solo = makeNode('solo', 123, 456);
+    const positions = calculateAutoLayoutPositions([solo], []);
+
+    expect(positions.solo).toEqual({ x: 123, y: 456 });
   });
 });

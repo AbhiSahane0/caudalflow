@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import {
   ZoomIn,
@@ -8,11 +8,13 @@ import {
   Settings,
   Plus,
   HelpCircle,
+  Network,
 } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useFlowStore } from '../../stores/flowStore';
 import { useChatStore } from '../../stores/chatStore';
 import { HelpGuidePanel } from '../ui/HelpGuide';
+import { calculateAutoLayoutPositions } from '../../utils/nodeLayout';
 
 export function CanvasControls() {
   const { zoomIn, zoomOut, fitView, getViewport } = useReactFlow();
@@ -20,6 +22,16 @@ export function CanvasControls() {
   const showMinimap = useSettingsStore((s) => s.showMinimap);
   const toggleSettings = useSettingsStore((s) => s.toggleSettings);
   const [showHelp, setShowHelp] = useState(false);
+  const arrangeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (arrangeTimerRef.current !== null) {
+        window.clearTimeout(arrangeTimerRef.current);
+      }
+      document.querySelector('.react-flow')?.classList.remove('auto-arranging');
+    };
+  }, []);
 
   const handleNewNode = () => {
     const viewport = getViewport();
@@ -31,6 +43,41 @@ export function CanvasControls() {
       collapsed: false,
     });
     useChatStore.getState().initConversation(nodeId);
+  };
+
+  const handleAutoArrange = () => {
+    const flowStore = useFlowStore.getState();
+    const flowElement = document.querySelector('.react-flow');
+
+    if (arrangeTimerRef.current !== null) {
+      window.clearTimeout(arrangeTimerRef.current);
+    }
+
+    flowElement?.classList.add('auto-arranging');
+
+    const positions = calculateAutoLayoutPositions(flowStore.nodes, flowStore.edges, {
+      horizontalGap: 100,
+      verticalGap: 40,
+      componentGap: 200,
+      origin: { x: 0, y: 0 },
+    });
+
+    flowStore.setNodes(
+      flowStore.nodes.map((node) => {
+        const position = positions[node.id];
+        if (!position) return node;
+        return {
+          ...node,
+          position,
+        };
+      })
+    );
+
+    arrangeTimerRef.current = window.setTimeout(() => {
+      fitView({ padding: 0.2 });
+      flowElement?.classList.remove('auto-arranging');
+      arrangeTimerRef.current = null;
+    }, 320);
   };
 
   const btnClass =
@@ -51,6 +98,9 @@ export function CanvasControls() {
         </button>
         <button onClick={() => fitView({ padding: 0.2 })} className={btnClass} title="Fit View">
           <Maximize size={18} />
+        </button>
+        <button onClick={handleAutoArrange} className={btnClass} title="Auto-arrange nodes">
+          <Network size={18} />
         </button>
         <div className="h-px bg-neutral-700/50 my-0.5" />
         <button

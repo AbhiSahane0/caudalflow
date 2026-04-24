@@ -57,6 +57,10 @@ html, body, #root {
   border: none !important;
 }
 
+.auto-arranging .react-flow__node {
+  transition: transform 300ms ease-out;
+}
+
 /* Re-enable text selection inside message areas (React Flow sets user-select: none on nodes) */
 .react-flow__node .select-text,
 .react-flow__node .select-text * {
